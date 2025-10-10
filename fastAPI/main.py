@@ -32,6 +32,12 @@ def make_predictions(dataModel: DataModel):
 
     return {"prediction": result}
 """
+### Preguntas JP
+# Se puede usar cloudpickle?
+# El pipeline incluye pasos de duplicados, vacios y así o se ignoran?
+# el pipeline es sobre todo el df o solo sobre los splits train/test?
+# para el segundo endpoint, las métricas se calculan solo de train o se debe generar un split de test también?
+
 
 @app.post("/predict")
 def make_predictions(dataModel: DataModel):
