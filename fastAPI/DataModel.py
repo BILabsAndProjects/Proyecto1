@@ -11,3 +11,9 @@ class DataModel(BaseModel):
     def columns(self):
         return ["textos"]
 
+class DataModelRetrain(BaseModel):
+    textos: List[str]
+    labels: List[int]
+
+    def columns(self):
+        return ["textos", "labels"]

@@ -1,8 +1,10 @@
 from typing import Optional
 from DataModel import DataModel
+from DataModel import DataModelRetrain
 from fastapi import FastAPI
 import pandas as pd
 import cloudpickle 
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 app = FastAPI()
 
@@ -48,3 +50,37 @@ def make_predictions(dataModel: DataModel):
     #print("➡️ Predicciones:", result)  # Debug
 
     return {"prediction": result}
+
+@app.post("/retrain")
+def make_predictions(dataModel: DataModelRetrain):
+    df = pd.DataFrame()
+    df["textos"] = dataModel.textos
+    df["labels"] = dataModel.labels
+    
+    df_og = pd.read_excel(r"assets/Datos_proyecto.xlsx")
+    df_unified = pd.concat([df, df_og])
+
+    with open("assets/pipeline.cloudpkl", "rb") as f:
+        model = cloudpickle.load(f)
+
+    X = df_unified['textos']
+    y = df_unified['labels']
+
+    model.fit(X, y)
+    y_pred = model.predict(X)
+
+    precision = precision_score(y, y_pred, average="weighted")
+    recall = recall_score(y, y_pred, average="weighted")
+    f1 = f1_score(y, y_pred, average="weighted")
+
+    #with open("assets/pipeline.cloudpkl", "wb") as f:
+    #    cloudpickle.dump(model, f)
+
+    #df_unified.to_csv("assets/datos_historicos.csv", index=False)
+
+
+    return {
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1
+    }
