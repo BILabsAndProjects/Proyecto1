@@ -47,18 +47,23 @@ def make_predictions(dataModel: DataModel):
     with open("assets/pipeline.cloudpkl", "rb") as f:
         model = cloudpickle.load(f)
 
-    result = model.predict(textos)
+    probabilities = model.predict_proba(textos)
+    classes = model.classes_
 
-    # Convertir a formato JSON-safe
-    result = result.tolist() if hasattr(result, "tolist") else [result]
-    result = [str(x) if not isinstance(x, (str, int, float, bool)) else x for x in result]
+    # usar argmaz ya que es mas facil que obtener predict
+    pred_indices = probabilities.argmax(axis=1)
 
-    #print("➡️ Predicciones:", result)  # Debug
-
-    return {"prediction": result}
+    result = [
+        {
+            "prediction": classes[pred_idx],
+            "probabilities": dict(zip(classes, probs))
+        }
+        for pred_idx, probs in zip(pred_indices, probabilities)
+    ]
+    return result
 
 @app.post("/retrain")
-def make_predictions(dataModel: DataModelRetrain):
+def retrain(dataModel: DataModelRetrain):
     df = pd.DataFrame()
     df["textos"] = dataModel.textos
     df["labels"] = dataModel.labels
@@ -75,18 +80,31 @@ def make_predictions(dataModel: DataModelRetrain):
     model.fit(X, y)
     y_pred = model.predict(X)
 
-    precision = precision_score(y, y_pred, average="weighted")
-    recall = recall_score(y, y_pred, average="weighted")
-    f1 = f1_score(y, y_pred, average="weighted")
+    precision = precision_score(y, y_pred, average="macro")
+    recall = recall_score(y, y_pred, average="macro")
+    f1 = f1_score(y, y_pred, average="macro")
+    
+    # metricas por clase para tirar mas info
+    precision_per_class = precision_score(y, y_pred, average=None)
+    recall_per_class = recall_score(y, y_pred, average=None)
 
-    #with open("assets/pipeline.cloudpkl", "wb") as f:
-    #    cloudpickle.dump(model, f)
+    
+    with open("assets/pipeline.cloudpkl", "wb") as f:
+       cloudpickle.dump(model, f)
 
-    #df_unified.to_csv("assets/datos_historicos.csv", index=False)
+    df_unified.to_csv("assets/datos_historicos.csv", index=False)
 
-
+    # {
+    #     "precision": 0.98,           
+    #     "recall": 0.98,            
+    #     "f1_score": 0.97,
+    #     "precision_per_class": [0.90, 0.80, 0.85],
+    #     "recall_per_class": [0.88, 0.78, 0.83]
+    # }
     return {
         "precision": precision,
         "recall": recall,
-        "f1_score": f1
+        "f1_score": f1,
+        "precision_per_class": precision_per_class.tolist(),
+        "recall_per_class": recall_per_class.tolist()
     }
