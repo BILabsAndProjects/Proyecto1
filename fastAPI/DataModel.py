@@ -1,16 +1,12 @@
 from pydantic import BaseModel
 from typing import List
 
+#Representación para endpoint de predict
 class DataModel(BaseModel):
-
-# Estas varibles permiten que la librería pydantic haga el parseo entre el Json recibido y el modelo declarado.
     textos: List[str]
-
-
-#Esta función retorna los nombres de las columnas correspondientes con el modelo exportado en joblib.
     def columns(self):
         return ["textos"]
-
+#Representación para endpoint de retrain 
 class DataModelRetrain(BaseModel):
     textos: List[str]
     labels: List[int]
