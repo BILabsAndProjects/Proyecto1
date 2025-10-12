@@ -1,7 +1,6 @@
 import nltk
 import os
 
-# Descargar datos necesarios de NLTK
 print("Descargando datos de NLTK...")
 
 try:
@@ -11,7 +10,6 @@ try:
     nltk.download('omw-1.4', quiet=False)
     nltk.download('punkt_tab', quiet=False)
     
-    # Verificar que se descargaron correctamente
     from nltk.corpus import stopwords
     print(f"Stopwords en español: {len(stopwords.words('spanish'))} palabras")
     
