@@ -12,10 +12,10 @@ function App() {
         {/* Header */}
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Sistema de Predicción de ODS
+            Sistema de predicción de ODS
           </h1>
           <p className="text-gray-600 mb-4">
-            Predicción y reentrenamiento de modelos de análisis de textos
+            Predicción y reentrenamiento de modelos de análisis de textos de opiniones en Colombia sobre los ODS 1, 3, y 4.
           </p>
           <div className="bg-white rounded-lg shadow p-4 max-w-4xl mx-auto mt-4">
             <h3 className="font-semibold text-gray-800 mb-4 text-center">Objetivos de Desarrollo Sostenible (ODS) disponibles:</h3>
