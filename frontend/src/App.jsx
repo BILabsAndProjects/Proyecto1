@@ -87,6 +87,9 @@ function App() {
         {/* Footer */}
         <footer className="text-center mt-8 text-gray-600 text-sm">
           <p>Proyecto 1 - Análisis de Textos ODS</p>
+          <p>Maria Alejandra Ángulo Mejía</p>
+          <p>Laura Sofía Murcia Carreño</p>
+          <p>David Tobón Molina</p>
         </footer>
       </div>
     </div>

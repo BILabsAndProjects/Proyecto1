@@ -17,6 +17,7 @@ function PredictionTab() {
   const [file, setFile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState(null)
+  const [originalTexts, setOriginalTexts] = useState(null)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
 
@@ -95,6 +96,7 @@ function PredictionTab() {
 
       const data = await response.json()
       setResults(data)
+      setOriginalTexts([inputText.trim()])
       setSuccess('Predicción completada exitosamente')
     } catch (err) {
       setError(err.message || 'Error al realizar la predicción')
@@ -130,6 +132,7 @@ function PredictionTab() {
 
       const data = await response.json()
       setResults(data)
+      setOriginalTexts(texts)
       setSuccess(`Predicción completada: ${data.length} textos procesados`)
     } catch (err) {
       setError(err.message || 'Error al procesar el archivo')
@@ -139,18 +142,27 @@ function PredictionTab() {
   }
 
   const downloadResults = () => {
-    if (!results) return
+    if (!results || !originalTexts) return
 
     // Crear CSV con resultados
     const csvRows = [
-      ['Índice', 'Predicción', 'Probabilidades'].join(',')
+      ['textos', 'labels', 'probabilidad ods 1', 'probabilidad ods 3', 'probabilidad ods 4'].join(',')
     ]
 
     results.forEach((result, idx) => {
-      const probsStr = Object.entries(result.probabilities)
-        .map(([cls, prob]) => `${cls}:${prob.toFixed(4)}`)
-        .join(' | ')
-      csvRows.push([idx + 1, result.prediction, `"${probsStr}"`].join(','))
+      const texto = originalTexts[idx] || ''
+      const label = result.prediction
+      const prob1 = result.probabilities[1] || 0
+      const prob3 = result.probabilities[3] || 0
+      const prob4 = result.probabilities[4] || 0
+      
+      csvRows.push([
+        `"${texto.replace(/"/g, '""')}"`,
+        label,
+        prob1.toFixed(4),
+        prob3.toFixed(4),
+        prob4.toFixed(4)
+      ].join(','))
     })
 
     const csvContent = csvRows.join('\n')
@@ -261,7 +273,7 @@ function PredictionTab() {
             </h3>
             <button
               onClick={downloadResults}
-              className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+              className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
             >
               <Download size={18} />
               Descargar CSV
