@@ -10,7 +10,6 @@ class WordTokenizerTransformer:
         pass
     
     def fit(self, X, y=None):
-        # No necesita entrenamiento pero permite compatibilidad scikit-learn
         self.stem = False
         self.wpt = nltk.WordPunctTokenizer()
         self.stop_words = set(nltk.corpus.stopwords.words("spanish"))
@@ -22,7 +21,7 @@ class WordTokenizerTransformer:
         tokenized_text = []
         
         for text in X:
-            doc = re.sub(r"[^A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]", "", text, flags=re.U)  # Unicode aware
+            doc = re.sub(r"[^A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]", "", text, flags=re.U)  
             doc = doc.lower()
             doc = doc.strip()
             tokens = self.wpt.tokenize(doc)
