@@ -65,7 +65,10 @@ def retrain(dataModel: DataModelRetrain):
     X = df_unified['textos']
     y = df_unified['labels']
     X_train_text, X_test_text, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=42)
-
+    
+    classifier = model.named_steps["classifier"]
+    classifier.set_params(class_weight='balanced')
+    
     model.fit(X_train_text, y_train)
     y_pred = model.predict(X_test_text)
     
