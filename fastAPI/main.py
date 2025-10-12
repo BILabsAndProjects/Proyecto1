@@ -82,22 +82,19 @@ def make_predictions(dataModel: DataModel):
 
 @app.post("/retrain")
 def retrain(dataModel: DataModelRetrain):
-    # Crear carpeta para modelos archivados si no existe
     archived_models_dir = "assets/archived_models"
     os.makedirs(archived_models_dir, exist_ok=True)
     
-    # Hacer backup del modelo actual antes de reentrenar
+    # hacer backup del pipeline con el modelo actual actual antes de reentrenar
     latest_model_path = "assets/latest_model.cloudpkl"
     original_model_path = "assets/pipeline.cloudpkl"
     
-    # Si existe latest_model, hacer backup con timestamp
     if os.path.exists(latest_model_path):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_path = f"{archived_models_dir}/model_{timestamp}.cloudpkl"
         shutil.copy2(latest_model_path, backup_path)
         print(f"Modelo anterior guardado en: {backup_path}")
     elif os.path.exists(original_model_path):
-        # Si es la primera vez, copiar el modelo original como latest
         shutil.copy2(original_model_path, latest_model_path)
     
     df = pd.DataFrame()
@@ -107,7 +104,6 @@ def retrain(dataModel: DataModelRetrain):
     df_og = pd.read_excel(r"assets/Datos_proyecto.xlsx")
     df_unified = pd.concat([df, df_og])
 
-    # Cargar el modelo latest o el original
     model_to_load = latest_model_path if os.path.exists(latest_model_path) else original_model_path
     with open(model_to_load, "rb") as f:
         model = cloudpickle.load(f)
@@ -122,7 +118,6 @@ def retrain(dataModel: DataModelRetrain):
     model.fit(X_train_text, y_train)
     y_pred = model.predict(X_test_text)
     
-
     precision = precision_score(y_test, y_pred, average="macro")
     recall = recall_score(y_test, y_pred, average="macro")
     f1 = f1_score(y_test, y_pred, average="macro")
@@ -130,19 +125,18 @@ def retrain(dataModel: DataModelRetrain):
     # metricas por clase para tirar mas info
     precision_per_class = precision_score(y_test, y_pred, average=None, labels=[1, 3, 4])
     recall_per_class = recall_score(y_test, y_pred, average=None, labels=[1, 3, 4])
-    # Matriz de confusión
+
     conf_matrix = confusion_matrix(y_test, y_pred, labels=[1, 3, 4])
     
-    # Guardar el nuevo modelo como latest_model
+    # guardar el nuevo modelo como latest_model
     with open("assets/latest_model.cloudpkl", "wb") as f:
         cloudpickle.dump(model, f)
     
-    # También actualizar el archivo de datos históricos con timestamp
+    # actualizar el archivo de datos históricos con timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     df_unified.to_excel("assets/Datos_proyecto.xlsx", index=False)
     df_unified.to_csv(f"{archived_models_dir}/datos_historicos_{timestamp}.csv", index=False)
     
-    # Guardar información del modelo en un archivo JSON
     model_info = {
         "model_timestamp": timestamp,
         "model_name": "latest_model.cloudpkl",
