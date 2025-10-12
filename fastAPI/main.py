@@ -2,6 +2,7 @@ from typing import Optional
 from DataModel import DataModel
 from DataModel import DataModelRetrain
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import cloudpickle 
 from sklearn.metrics import precision_score, recall_score, f1_score
@@ -10,15 +11,19 @@ from sklearn.model_selection import train_test_split
 
 app = FastAPI()
 
+# Configurar CORS para permitir peticiones desde el frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/")
 def read_root():
    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Optional[str] = None):
-   return {"item_id": item_id, "q": q}
 
 
 @app.post("/predict")
@@ -32,13 +37,13 @@ def make_predictions(dataModel: DataModel):
     probabilities = model.predict_proba(textos)
     classes = model.classes_
 
-    # usar argmaz ya que es mas facil que obtener predict
+    # usar argmax ya que es mas facil que obtener predict
     pred_indices = probabilities.argmax(axis=1)
 
     result = [
         {
-            "prediction": classes[pred_idx],
-            "probabilities": dict(zip(classes, probs))
+            "prediction": int(classes[pred_idx]),
+            "probabilities": {int(cls): float(prob) for cls, prob in zip(classes, probs)}
         }
         for pred_idx, probs in zip(pred_indices, probabilities)
     ]
@@ -65,13 +70,13 @@ def retrain(dataModel: DataModelRetrain):
     y_pred = model.predict(X_test_text)
     
 
-    precision = precision_score(y, y_pred, average="macro")
-    recall = recall_score(y, y_pred, average="macro")
-    f1 = f1_score(y, y_pred, average="macro")
+    precision = precision_score(y_test, y_pred, average="macro")
+    recall = recall_score(y_test, y_pred, average="macro")
+    f1 = f1_score(y_test, y_pred, average="macro")
     
     # metricas por clase para tirar mas info
-    precision_per_class = precision_score(y, y_pred, average=None)
-    recall_per_class = recall_score(y, y_pred, average=None)
+    precision_per_class = precision_score(y_test, y_pred, average=None)
+    recall_per_class = recall_score(y_test, y_pred, average=None)
 
     
     with open("assets/pipeline.cloudpkl", "wb") as f:
@@ -87,9 +92,9 @@ def retrain(dataModel: DataModelRetrain):
     #     "recall_per_class": [0.88, 0.78, 0.83]
     # }
     return {
-        "precision": precision,
-        "recall": recall,
-        "f1_score": f1,
-        "precision_per_class": precision_per_class.tolist(),
-        "recall_per_class": recall_per_class.tolist()
+        "precision": float(precision),
+        "recall": float(recall),
+        "f1_score": float(f1),
+        "precision_per_class": [float(x) for x in precision_per_class],
+        "recall_per_class": [float(x) for x in recall_per_class]
     }
