@@ -117,13 +117,13 @@ def retrain(dataModel: DataModelRetrain):
     
     # También actualizar el archivo de datos históricos con timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    df_unified.to_csv("assets/datos_historicos.csv", index=False)
+    df_unified.to_excel("assets/Datos_proyecto.xlsx", index=False)
     df_unified.to_csv(f"{archived_models_dir}/datos_historicos_{timestamp}.csv", index=False)
     
     print(f"Nuevo modelo guardado como latest_model.cloudpkl")
     print(f"Datos históricos guardados con timestamp: {timestamp}")
 
-    return {
+    return {s
         "precision": float(precision),
         "recall": float(recall),
         "f1_score": float(f1),
