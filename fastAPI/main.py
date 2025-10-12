@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 from datetime import datetime
 import os
 import shutil
+import json
 
 
 app = FastAPI()
@@ -26,7 +27,28 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-   return {"Hello": "World"}
+    return {"Hello": "World"}
+
+
+@app.get("/model-info")
+def get_model_info():
+    """Retorna información sobre el modelo actual incluyendo el timestamp del último entrenamiento"""
+    info_file = "assets/model_info.json"
+    
+    # Si existe el archivo de info, leerlo
+    if os.path.exists(info_file):
+        try:
+            with open(info_file, "r") as f:
+                info = json.load(f)
+                return info
+        except Exception as e:
+            print(f"Error al leer model_info.json: {e}")
+    
+    # Si no existe o hay error, retornar info por defecto
+    return {
+        "model_timestamp": None,
+        "model_name": "pipeline.cloudpkl (original)"
+    }
 
 
 @app.post("/predict")
@@ -113,17 +135,26 @@ def retrain(dataModel: DataModelRetrain):
     
     # Guardar el nuevo modelo como latest_model
     with open("assets/latest_model.cloudpkl", "wb") as f:
-       cloudpickle.dump(model, f)
+        cloudpickle.dump(model, f)
     
     # También actualizar el archivo de datos históricos con timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     df_unified.to_excel("assets/Datos_proyecto.xlsx", index=False)
     df_unified.to_csv(f"{archived_models_dir}/datos_historicos_{timestamp}.csv", index=False)
     
+    # Guardar información del modelo en un archivo JSON
+    model_info = {
+        "model_timestamp": timestamp,
+        "model_name": "latest_model.cloudpkl",
+        "last_retrain_date": datetime.now().isoformat()
+    }
+    with open("assets/model_info.json", "w") as f:
+        json.dump(model_info, f)
+    
     print(f"Nuevo modelo guardado como latest_model.cloudpkl")
     print(f"Datos históricos guardados con timestamp: {timestamp}")
 
-    return {s
+    return {
         "precision": float(precision),
         "recall": float(recall),
         "f1_score": float(f1),

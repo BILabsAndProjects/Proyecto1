@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Upload, FileText, Download, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
@@ -20,6 +20,24 @@ function PredictionTab() {
   const [originalTexts, setOriginalTexts] = useState(null)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+  const [modelInfo, setModelInfo] = useState(null)
+
+  // Cargar información del modelo al montar el componente
+  useEffect(() => {
+    const fetchModelInfo = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/model-info`)
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Model info received (Prediction):', data)
+          setModelInfo(data)
+        }
+      } catch (err) {
+        console.error('Error al cargar información del modelo:', err)
+      }
+    }
+    fetchModelInfo()
+  }, [])
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0]
@@ -39,13 +57,26 @@ function PredictionTab() {
     return new Promise((resolve, reject) => {
       const ext = file.name.split('.').pop().toLowerCase()
       
+      // Función para detectar si una fila es encabezado
+      const isHeader = (value) => {
+        const headerKeywords = ['texto', 'textos', 'text', 'opinion', 'opiniones', 'comentario']
+        const normalizedValue = String(value).toLowerCase().trim()
+        return headerKeywords.includes(normalizedValue)
+      }
+      
       if (ext === 'csv') {
         Papa.parse(file, {
           complete: (results) => {
-            // Extrae la primera columna de todas las filas (excepto header si existe)
-            const texts = results.data
+            // Extrae la primera columna de todas las filas
+            let texts = results.data
               .filter(row => row && row[0] && row[0].trim())
               .map(row => row[0].trim())
+            
+            // Omitir primera fila si es encabezado
+            if (texts.length > 0 && isHeader(texts[0])) {
+              texts = texts.slice(1)
+            }
+            
             resolve(texts)
           },
           error: (error) => reject(error),
@@ -61,9 +92,15 @@ function PredictionTab() {
             const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 })
             
             // Extrae la primera columna
-            const texts = jsonData
+            let texts = jsonData
               .filter(row => row && row[0] && String(row[0]).trim())
               .map(row => String(row[0]).trim())
+            
+            // Omitir primera fila si es encabezado
+            if (texts.length > 0 && isHeader(texts[0])) {
+              texts = texts.slice(1)
+            }
+            
             resolve(texts)
           } catch (err) {
             reject(err)
@@ -175,6 +212,39 @@ function PredictionTab() {
 
   return (
     <div className="space-y-6">
+      {/* Información del Modelo */}
+      {modelInfo && (
+        <div className={`rounded-lg p-4 text-center ${
+          modelInfo.model_timestamp 
+            ? 'bg-orange-100 border-2 border-orange-400' 
+            : 'bg-gray-50 border border-gray-200'
+        }`}>
+          {modelInfo.model_timestamp ? (
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-md font-medium text-orange-700">Última fecha de entrenamiento:</span>
+                <span className="text-base text-orange-900 font-bold px-3 py-1 rounded">
+                  {(() => {
+                    const timestamp = modelInfo.model_timestamp
+                    const year = timestamp.substring(0, 4)
+                    const month = timestamp.substring(4, 6)
+                    const day = timestamp.substring(6, 8)
+                    const hour = timestamp.substring(9, 11)
+                    const minute = timestamp.substring(11, 13)
+                    const second = timestamp.substring(13, 15)
+                    return `${day}/${month}/${year} ${hour}:${minute}:${second}`
+                  })()}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <span className="text-sm font-medium text-gray-700">
+              Usando modelo original - No hay reentrenamientos previos
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Alerts */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
@@ -285,6 +355,7 @@ function PredictionTab() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">#</th>
+                  <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Texto</th>
                   <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">ODS Predicho</th>
                   <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Probabilidades</th>
                 </tr>
@@ -293,6 +364,11 @@ function PredictionTab() {
                 {results.map((result, idx) => (
                   <tr key={idx} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm text-gray-600">{idx + 1}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 max-w-md">
+                      <div className="line-clamp-3" title={originalTexts?.[idx] || ''}>
+                        {originalTexts?.[idx] || 'N/A'}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <span 
                         className="inline-block px-3 py-1 rounded-full text-sm font-medium text-white"

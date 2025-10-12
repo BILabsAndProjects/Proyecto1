@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { Upload, Loader2, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react'
@@ -25,6 +25,25 @@ function RetrainingTab() {
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+  const [modelInfo, setModelInfo] = useState(null)
+
+  // Cargar información del modelo al montar el componente y después de reentrenar
+  const fetchModelInfo = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/model-info`)
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Model info received:', data)
+        setModelInfo(data)
+      }
+    } catch (err) {
+      console.error('Error al cargar información del modelo:', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchModelInfo()
+  }, [])
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0]
@@ -173,6 +192,8 @@ function RetrainingTab() {
       setResults(data)
       const timestamp = data.model_timestamp ? ` - Modelo guardado: ${data.model_timestamp}` : ''
       setSuccess(`Reentrenamiento completado con ${textos.length} ejemplos${timestamp}`)
+      // Actualizar información del modelo después del reentrenamiento
+      fetchModelInfo()
     } catch (err) {
       setError(err.message || 'Error al procesar el reentrenamiento')
     } finally {
@@ -182,6 +203,39 @@ function RetrainingTab() {
 
   return (
     <div className="space-y-6">
+      {/* Información del Modelo */}
+      {modelInfo && (
+        <div className={`rounded-lg p-4 text-center ${
+          modelInfo.model_timestamp 
+            ? 'bg-green-100 border-2 border-green-400' 
+            : 'bg-gray-50 border border-gray-200'
+        }`}>
+          {modelInfo.model_timestamp ? (
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-green-700">Última fecha de entrenamiento:</span>
+                <span className="text-base text-green-900 font-bold px-3 py-1 rounded">
+                  {(() => {
+                    const timestamp = modelInfo.model_timestamp
+                    const year = timestamp.substring(0, 4)
+                    const month = timestamp.substring(4, 6)
+                    const day = timestamp.substring(6, 8)
+                    const hour = timestamp.substring(9, 11)
+                    const minute = timestamp.substring(11, 13)
+                    const second = timestamp.substring(13, 15)
+                    return `${day}/${month}/${year} ${hour}:${minute}:${second}`
+                  })()}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <span className="text-sm font-medium text-gray-700">
+              Usando modelo original - No hay reentrenamientos previos
+            </span>
+          )}
+        </div>
+      )}
+
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
           <AlertCircle className="text-red-500 flex-shrink-0" size={20} />
@@ -275,19 +329,6 @@ function RetrainingTab() {
             />
           </div>
 
-          {results.model_timestamp && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
-              <div>
-                <span className="text-sm font-medium text-blue-900">Modelo Actual:</span>
-                <span className="ml-2 text-sm text-blue-700">{results.model_saved_as || 'latest_model.cloudpkl'}</span>
-              </div>
-              <div>
-                <span className="text-sm font-medium text-blue-900">Fecha de entrenamiento:</span>
-                <span className="ml-2 text-sm text-blue-700 font-mono">{results.model_timestamp}</span>
-              </div>
-            </div>
-          )}
-
           {results.precision_per_class && results.recall_per_class && results.classes && (
             <div className="mt-6 space-y-6">
               {/* Gráfico de Precisión por Clase */}
@@ -372,10 +413,6 @@ function RetrainingTab() {
                       </tbody>
                     </table>
                   </div>
-                  <p className="text-sm text-gray-600 mt-3">
-                    La diagonal (verde) representa las predicciones correctas. 
-                    Los valores fuera de la diagonal representan errores de clasificación.
-                  </p>
                 </div>
               )}
             </div>

@@ -86,7 +86,7 @@ function App() {
 
         {/* Footer */}
         <footer className="text-center mt-8 text-gray-600 text-sm">
-          <p>Proyecto 1 - ClasificaciOn de opiniones sobre ODS</p>
+          <p>Proyecto 1 - Clasificación de opiniones sobre ODS</p>
           <p>Maria Alejandra Ángulo Mejía</p>
           <p>Laura Sofía Murcia Carreño</p>
           <p>David Tobón Molina</p>

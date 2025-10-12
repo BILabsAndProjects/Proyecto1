@@ -7,8 +7,6 @@ services:
     container_name: ods-backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./fastAPI/assets:/app/assets
     networks:
       - app-network
     restart: unless-stopped

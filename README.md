@@ -1,17 +1,16 @@
 # Sistema de Predicción de ODS
 
-Sistema web para predicción y reentrenamiento de modelos de clasificación de textos relacionados con Objetivos de Desarrollo Sostenible (ODS).
+Sistema con interfaz web para predicción y reentrenamiento de modelos de clasificación de textos relacionados con Objetivos de Desarrollo Sostenible (ODS).
 
-## 🎯 ODS Disponibles
+## ODS Disponibles
 
 - **ODS 1**: FIN DE LA POBREZA - Poner fin a la pobreza en todas sus formas en todo el mundo
 - **ODS 3**: SALUD Y BIENESTAR - Garantizar una vida sana y promover el bienestar para todos en todas las edades
 - **ODS 4**: EDUCACIÓN DE CALIDAD - Garantizar una educación inclusiva, equitativa y de calidad y promover oportunidades de aprendizaje durante toda la vida para todos
 
-## Inicio Rápido con Docker
+## Despliegue local con Docker
 
 ```bash
-# Construir e iniciar
 docker-compose up -d --build
 
 # Acceder a la aplicación
@@ -23,14 +22,8 @@ docker-compose up -d --build
 docker-compose down
 ```
 
-## Estructura
 
-```
-├── fastAPI/          # Backend (FastAPI + scikit-learn)
-├── frontend/         # Frontend (React + Vite + Tailwind)
-└── docker-compose.yml
-
-## Uso Sin Docker (Desarrollo Local)
+## Desarrollo Local (sin Docker)
 
 **Terminal 1 - Backend:**
 ```powershell
