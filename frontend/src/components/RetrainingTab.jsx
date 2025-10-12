@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Upload, Loader2, AlertCircle, CheckCircle2, TrendingUp } from 'lucide-react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
+import { Upload, Loader2, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts'
 
 const API_BASE_URL = '/api'
 
@@ -13,9 +14,9 @@ const ODS_COLORS = {
 }
 
 const ODS_NAMES = {
-  1: 'Fin de la pobreza',
-  3: 'Salud y bienestar',
-  4: 'Educación de calidad'
+  1: 'FIN DE LA POBREZA',
+  3: 'SALUD Y BIENESTAR',
+  4: 'EDUCACIÓN DE CALIDAD'
 }
 
 function RetrainingTab() {
@@ -50,15 +51,28 @@ function RetrainingTab() {
             try {
               const data = results.data.filter(row => row && Object.keys(row).length > 0)
               
-              const textColumn = Object.keys(data[0]).find(key => 
+              if (data.length === 0) {
+                throw new Error('El archivo está vacío')
+              }
+              
+              const columns = Object.keys(data[0])
+              
+              // Intentar encontrar columnas por nombre
+              let textColumn = columns.find(key => 
                 key.toLowerCase().includes('texto') || key.toLowerCase().includes('text')
               )
-              const labelColumn = Object.keys(data[0]).find(key => 
+              let labelColumn = columns.find(key => 
                 key.toLowerCase().includes('label') || key.toLowerCase().includes('etiqueta')
               )
 
+              // Si no se encuentran por nombre y hay exactamente 2 columnas, usar las 2 primeras
+              if ((!textColumn || !labelColumn) && columns.length === 2) {
+                textColumn = columns[0]
+                labelColumn = columns[1]
+              }
+
               if (!textColumn || !labelColumn) {
-                throw new Error('El archivo debe contener columnas "textos" y "labels"')
+                throw new Error('El archivo debe contener 2 columnas o columnas llamadas "textos" y "labels"')
               }
 
               const texts = data.map(row => String(row[textColumn]).trim()).filter(Boolean)
@@ -89,15 +103,24 @@ function RetrainingTab() {
               throw new Error('El archivo está vacío')
             }
 
-            const textColumn = Object.keys(jsonData[0]).find(key => 
-              key.toLowerCase().includes('texto') || key.toLowerCase().includes('text')
+            const columns = Object.keys(jsonData[0])
+            
+            // Intentar encontrar columnas por nombre
+            let textColumn = columns.find(key => 
+              key.toLowerCase().includes('text')
             )
-            const labelColumn = Object.keys(jsonData[0]).find(key => 
+            let labelColumn = columns.find(key => 
               key.toLowerCase().includes('label') || key.toLowerCase().includes('etiqueta')
             )
 
+            // Si no se encuentran por nombre y hay exactamente 2 columnas, usar las 2 primeras
+            if ((!textColumn || !labelColumn) && columns.length === 2) {
+              textColumn = columns[0]
+              labelColumn = columns[1]
+            }
+
             if (!textColumn || !labelColumn) {
-              throw new Error('El archivo debe contener columnas "textos" y "labels"')
+              throw new Error('El archivo debe contener 2 columnas o columnas llamadas "textos" y "labels"')
             }
 
             const texts = jsonData.map(row => String(row[textColumn]).trim()).filter(Boolean)
@@ -148,7 +171,8 @@ function RetrainingTab() {
 
       const data = await response.json()
       setResults(data)
-      setSuccess(`Reentrenamiento completado con ${textos.length} ejemplos`)
+      const timestamp = data.model_timestamp ? ` - Modelo guardado: ${data.model_timestamp}` : ''
+      setSuccess(`Reentrenamiento completado con ${textos.length} ejemplos${timestamp}`)
     } catch (err) {
       setError(err.message || 'Error al procesar el reentrenamiento')
     } finally {
@@ -175,9 +199,9 @@ function RetrainingTab() {
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <h4 className="font-semibold text-green-900 mb-2">Instrucciones</h4>
         <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
-          <li>El archivo debe contener dos columnas: <strong>"textos"</strong> y <strong>"labels"</strong></li>
-          <li>Cada fila representa un ejemplo de entrenamiento</li>
-          <li>Las etiquetas válidas son: <strong>1</strong> (Fin de la pobreza), <strong>3</strong> (Salud y bienestar), <strong>4</strong> (Educación de calidad)</li>
+          <li>El archivo debe contener dos columnas con textos y etiquetas</li>
+          <li>Se aceptan nombres como <strong>"textos"</strong> y <strong>"labels"</strong>, o cualquier archivo con exactamente 2 columnas</li>
+          <li>Las etiquetas válidas son: <strong>1</strong> (FIN DE LA POBREZA), <strong>3</strong> (SALUD Y BIENESTAR), <strong>4</strong> (EDUCACIÓN DE CALIDAD)</li>
           <li>Formatos aceptados: CSV o XLSX</li>
         </ul>
       </div>
@@ -251,38 +275,109 @@ function RetrainingTab() {
             />
           </div>
 
-          {results.precision_per_class && results.recall_per_class && (
-            <div className="mt-6">
-              <h4 className="font-semibold text-gray-700 mb-3">Métricas por Clase (ODS)</h4>
-              <div className="space-y-3">
-                {results.precision_per_class.map((precision, idx) => {
-                  const odsNumber = idx + 1
-                  const odsColor = ODS_COLORS[odsNumber] || '#666'
-                  const odsName = ODS_NAMES[odsNumber] || `ODS ${odsNumber}`
-                  
-                  return (
-                    <div 
-                      key={idx} 
-                      className="p-4 rounded-lg text-white"
-                      style={{backgroundColor: odsColor}}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h5 className="font-bold text-lg">ODS {odsNumber}: {odsName}</h5>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="opacity-90">Precisión:</span>
-                          <span className="ml-2 font-bold">{(precision * 100).toFixed(2)}%</span>
-                        </div>
-                        <div>
-                          <span className="opacity-90">Recall:</span>
-                          <span className="ml-2 font-bold">{(results.recall_per_class[idx] * 100).toFixed(2)}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+          {results.model_timestamp && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+              <div>
+                <span className="text-sm font-medium text-blue-900">Modelo Actual:</span>
+                <span className="ml-2 text-sm text-blue-700">{results.model_saved_as || 'latest_model.cloudpkl'}</span>
               </div>
+              <div>
+                <span className="text-sm font-medium text-blue-900">Fecha de entrenamiento:</span>
+                <span className="ml-2 text-sm text-blue-700 font-mono">{results.model_timestamp}</span>
+              </div>
+            </div>
+          )}
+
+          {results.precision_per_class && results.recall_per_class && results.classes && (
+            <div className="mt-6 space-y-6">
+              {/* Gráfico de Precisión por Clase */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <h4 className="font-semibold text-gray-700 mb-4">Precisión por Clase</h4>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart
+                    data={results.classes.map((cls, idx) => ({
+                      name: `ODS ${cls}`,
+                      precision: (results.precision_per_class[idx] * 100).toFixed(2)
+                    }))}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip formatter={(value) => `${value}%`} />
+                    <Bar dataKey="precision" fill="#10b981" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Gráfico de Recall por Clase */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <h4 className="font-semibold text-gray-700 mb-4">Recall (Cobertura) por Clase</h4>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart
+                    data={results.classes.map((cls, idx) => ({
+                      name: `ODS ${cls}`,
+                      recall: (results.recall_per_class[idx] * 100).toFixed(2)
+                    }))}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip formatter={(value) => `${value}%`} />
+                    <Bar dataKey="recall" fill="#10b981" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Matriz de Confusión */}
+              {results.confusion_matrix && (
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <h4 className="font-semibold text-gray-700 mb-4">Matriz de Confusión</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr>
+                          <th className="border border-gray-300 bg-gray-100 p-3"></th>
+                          {results.classes.map(cls => (
+                            <th key={cls} className="border border-gray-300 bg-gray-100 p-3 font-semibold">
+                              Predicho ODS {cls}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {results.confusion_matrix.map((row, rowIdx) => (
+                          <tr key={rowIdx}>
+                            <th className="border border-gray-300 bg-gray-100 p-3 font-semibold">
+                              Real ODS {results.classes[rowIdx]}
+                            </th>
+                            {row.map((value, colIdx) => (
+                              <td 
+                                key={colIdx} 
+                                className="border border-gray-300 p-3 text-center font-medium"
+                                style={{
+                                  backgroundColor: rowIdx === colIdx 
+                                    ? 'rgba(16, 185, 129, 0.2)' 
+                                    : value > 0 
+                                    ? 'rgba(239, 68, 68, 0.1)' 
+                                    : 'white'
+                                }}
+                              >
+                                {value}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-3">
+                    La diagonal (verde) representa las predicciones correctas. 
+                    Los valores fuera de la diagonal representan errores de clasificación.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

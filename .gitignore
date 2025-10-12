@@ -1,1 +1,28 @@
 .env
+
+# Modelos archivados
+fastAPI/assets/archived_models/
+fastAPI/assets/latest_model.cloudpkl
+fastAPI/assets/datos_historicos.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Node
+node_modules/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

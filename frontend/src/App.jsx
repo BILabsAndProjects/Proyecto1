@@ -26,7 +26,7 @@ function App() {
                   alt="ODS 1 - Fin de la pobreza" 
                   className="w-full rounded-lg shadow-md hover:shadow-lg transition-shadow"
                 />
-                <p className="text-center text-sm text-gray-700 mt-2 font-medium">Fin de la pobreza</p>
+                <p className="text-center text-sm font-bold mt-2" style={{color: '#E5243B'}}>ODS 1: FIN DE LA POBREZA</p>
               </div>
               <div className="flex flex-col items-center">
                 <img 
@@ -34,7 +34,7 @@ function App() {
                   alt="ODS 3 - Salud y bienestar" 
                   className="w-full rounded-lg shadow-md hover:shadow-lg transition-shadow"
                 />
-                <p className="text-center text-sm text-gray-700 mt-2 font-medium">Salud y bienestar</p>
+                <p className="text-center text-sm font-bold mt-2" style={{color: '#4C9F38'}}>ODS 3: SALUD Y BIENESTAR</p>
               </div>
               <div className="flex flex-col items-center">
                 <img 
@@ -42,7 +42,7 @@ function App() {
                   alt="ODS 4 - Educación de calidad" 
                   className="w-full rounded-lg shadow-md hover:shadow-lg transition-shadow"
                 />
-                <p className="text-center text-sm text-gray-700 mt-2 font-medium">Educación de calidad</p>
+                <p className="text-center text-sm font-bold mt-2" style={{color: '#C5192D'}}>ODS 4: EDUCACIÓN DE CALIDAD</p>
               </div>
             </div>
           </div>
@@ -86,7 +86,7 @@ function App() {
 
         {/* Footer */}
         <footer className="text-center mt-8 text-gray-600 text-sm">
-          <p>Proyecto 1 - Análisis de Textos ODS</p>
+          <p>Proyecto 1 - ClasificaciOn de opiniones sobre ODS</p>
           <p>Maria Alejandra Ángulo Mejía</p>
           <p>Laura Sofía Murcia Carreño</p>
           <p>David Tobón Molina</p>

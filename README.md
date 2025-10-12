@@ -2,11 +2,11 @@
 
 Sistema web para predicción y reentrenamiento de modelos de clasificación de textos relacionados con Objetivos de Desarrollo Sostenible (ODS).
 
-## ODS Disponibles
+## 🎯 ODS Disponibles
 
-- **ODS 1**: Fin de la pobreza - Poner fin a la pobreza en todas sus formas
-- **ODS 3**: Salud y bienestar - Garantizar una vida sana y promover el bienestar
-- **ODS 4**: Educación de calidad - Garantizar educación inclusiva y equitativa
+- **ODS 1**: FIN DE LA POBREZA - Poner fin a la pobreza en todas sus formas en todo el mundo
+- **ODS 3**: SALUD Y BIENESTAR - Garantizar una vida sana y promover el bienestar para todos en todas las edades
+- **ODS 4**: EDUCACIÓN DE CALIDAD - Garantizar una educación inclusiva, equitativa y de calidad y promover oportunidades de aprendizaje durante toda la vida para todos
 
 ## Inicio Rápido con Docker
 

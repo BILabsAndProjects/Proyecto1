@@ -5,8 +5,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import cloudpickle 
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 from sklearn.model_selection import train_test_split
+from datetime import datetime
+import os
+import shutil
 
 
 app = FastAPI()
@@ -31,7 +34,12 @@ def make_predictions(dataModel: DataModel):
     # dataModel.textos ya es una lista
     textos = dataModel.textos
 
-    with open("assets/pipeline.cloudpkl", "rb") as f:
+    model_path = "assets/latest_model.cloudpkl"
+    if not os.path.exists(model_path):
+        # Fallback al modelo original si latest no existe
+        model_path = "assets/pipeline.cloudpkl"
+    
+    with open(model_path, "rb") as f:
         model = cloudpickle.load(f)
 
     probabilities = model.predict_proba(textos)
@@ -52,6 +60,24 @@ def make_predictions(dataModel: DataModel):
 
 @app.post("/retrain")
 def retrain(dataModel: DataModelRetrain):
+    # Crear carpeta para modelos archivados si no existe
+    archived_models_dir = "assets/archived_models"
+    os.makedirs(archived_models_dir, exist_ok=True)
+    
+    # Hacer backup del modelo actual antes de reentrenar
+    latest_model_path = "assets/latest_model.cloudpkl"
+    original_model_path = "assets/pipeline.cloudpkl"
+    
+    # Si existe latest_model, hacer backup con timestamp
+    if os.path.exists(latest_model_path):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = f"{archived_models_dir}/model_{timestamp}.cloudpkl"
+        shutil.copy2(latest_model_path, backup_path)
+        print(f"Modelo anterior guardado en: {backup_path}")
+    elif os.path.exists(original_model_path):
+        # Si es la primera vez, copiar el modelo original como latest
+        shutil.copy2(original_model_path, latest_model_path)
+    
     df = pd.DataFrame()
     df["textos"] = dataModel.textos
     df["labels"] = dataModel.labels
@@ -59,7 +85,9 @@ def retrain(dataModel: DataModelRetrain):
     df_og = pd.read_excel(r"assets/Datos_proyecto.xlsx")
     df_unified = pd.concat([df, df_og])
 
-    with open("assets/pipeline.cloudpkl", "rb") as f:
+    # Cargar el modelo latest o el original
+    model_to_load = latest_model_path if os.path.exists(latest_model_path) else original_model_path
+    with open(model_to_load, "rb") as f:
         model = cloudpickle.load(f)
 
     X = df_unified['textos']
@@ -78,26 +106,31 @@ def retrain(dataModel: DataModelRetrain):
     f1 = f1_score(y_test, y_pred, average="macro")
     
     # metricas por clase para tirar mas info
-    precision_per_class = precision_score(y_test, y_pred, average=None)
-    recall_per_class = recall_score(y_test, y_pred, average=None)
-
+    precision_per_class = precision_score(y_test, y_pred, average=None, labels=[1, 3, 4])
+    recall_per_class = recall_score(y_test, y_pred, average=None, labels=[1, 3, 4])
+    # Matriz de confusión
+    conf_matrix = confusion_matrix(y_test, y_pred, labels=[1, 3, 4])
     
-    with open("assets/pipeline.cloudpkl", "wb") as f:
+    # Guardar el nuevo modelo como latest_model
+    with open("assets/latest_model.cloudpkl", "wb") as f:
        cloudpickle.dump(model, f)
-
+    
+    # También actualizar el archivo de datos históricos con timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     df_unified.to_csv("assets/datos_historicos.csv", index=False)
+    df_unified.to_csv(f"{archived_models_dir}/datos_historicos_{timestamp}.csv", index=False)
+    
+    print(f"Nuevo modelo guardado como latest_model.cloudpkl")
+    print(f"Datos históricos guardados con timestamp: {timestamp}")
 
-    # {
-    #     "precision": 0.98,           
-    #     "recall": 0.98,            
-    #     "f1_score": 0.97,
-    #     "precision_per_class": [0.90, 0.80, 0.85],
-    #     "recall_per_class": [0.88, 0.78, 0.83]
-    # }
     return {
         "precision": float(precision),
         "recall": float(recall),
         "f1_score": float(f1),
+        "classes": [1, 3, 4],
         "precision_per_class": [float(x) for x in precision_per_class],
-        "recall_per_class": [float(x) for x in recall_per_class]
+        "recall_per_class": [float(x) for x in recall_per_class],
+        "confusion_matrix": conf_matrix.tolist(),
+        "model_timestamp": timestamp,
+        "model_saved_as": "latest_model.cloudpkl"
     }
