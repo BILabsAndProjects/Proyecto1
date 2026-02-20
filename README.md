@@ -1,6 +1,6 @@
-# Sistema de Predicción de ODS
+# Sistema de Clasificación de opiniones sobre ODS
 
-Sistema con interfaz web para predicción y reentrenamiento de modelos de clasificación de textos relacionados con Objetivos de Desarrollo Sostenible (ODS).
+Sistema con interfaz web para predicción y reentrenamiento de modelos de clasificación de opiniones relacionadas con Objetivos de Desarrollo Sostenible (ODS).
 
 ## ODS Disponibles
 
